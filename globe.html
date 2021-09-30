@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babylon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      .tool-tip {
+        position: absolute;
+        display: block;
+        border-style: solid;
+        white-space: nowrap;
+        z-index: 9999999;
+        box-shadow: rgb(255, 0, 0) 0px 0px 10px;
+        transition: opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1) 0s,
+          visibility 0.2s cubic-bezier(0.23, 1, 0.32, 1) 0s,
+          transform 0.4s cubic-bezier(0.23, 1, 0.32, 1) 0s;
+        background-color: rgb(255, 255, 255);
+        border-width: 1px;
+        border-radius: 4px;
+        color: rgb(102, 102, 102);
+        font: 14px / 21px "Microsoft YaHei";
+        padding: 10px;
+        top: 0px;
+        left: 0px;
+        transform: translate3d(0, 0, 0);
+        border-color: rgb(145, 204, 117);
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      .tool-tip-title {
+        font-size: 14px;
+        color: #666;
+      }
+      .tool-tip-info {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      .tool-tip-info > .icon {
+        display: inline-block;
+        margin-right: 4px;
+        border-radius: 10px;
+        width: 10px;
+        height: 10px;
+        margin-top: 5px;
+        background-color: #91cc75;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tool-tip">
+      <div class="tool-tip-title">TOP5</div>
+      <div class="tool-tip-info">
+        <span class="icon"></span>
+        <span class="text">this is tool-tip!</span>
+      </div>
+    </div>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene, getPosition } from "./util/util.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera, light1 } = initScene(engine, canvas);
+
+      const outLineMeshLayer = new BABYLON.HighlightLayer(
+        "outLineMeshLayer",
+        scene
+      );
+      scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+      // axisHelper(scene, 50);
+      light1.intensity = 0;
+      const unit = 10;
+      //
+      const HemisphericLight = new BABYLON.HemisphericLight(
+        "light",
+        new BABYLON.Vector3(-1, 1, 0),
+        scene
+      );
+      HemisphericLight.intensity = 1;
+
+      const DirectionalLight = new BABYLON.DirectionalLight(
+        "DirectionalLight",
+        new BABYLON.Vector3(0, 0, 0),
+        scene
+      );
+      DirectionalLight.intensity = 1;
+      // earth
+      const globe = BABYLON.MeshBuilder.CreateSphere(
+        "globe",
+        {
+          arc: Math.PI,
+          diameter: 5 * unit,
+        },
+        scene
+      );
+      const globeMat = new BABYLON.StandardMaterial("boxMat");
+      globeMat.diffuseColor = new BABYLON.Color3(3, 3, 3); //漫反射颜色
+      globeMat.specularColor = new BABYLON.Color3(0.5, 0.5, 0.5); //镜面颜色
+      globeMat.emissiveColor = new BABYLON.Color3(1, 1, 1); //自发光颜色
+      globeMat.ambientColor = new BABYLON.Color3(3, 3, 3); //环境光颜色
+      globeMat.diffuseTexture = new BABYLON.Texture(
+        "./static/IMG/shiningEarth.jpg"
+      );
+      globe.material = globeMat;
+      // 长方体
+      const drawBox = (parentGlobe) => {
+        new Array(15).fill(0).forEach((item, index) => {
+          const height = Math.random() * 3;
+          // mesh
+          const box = BABYLON.MeshBuilder.CreateBox("", {
+            height: height,
+            width: 0.8,
+            depth: 0.8,
+          });
+          // material
+          const boxMat = new BABYLON.StandardMaterial();
+          boxMat.diffuseColor = new BABYLON.Color3(
+            Math.random(),
+            Math.random(),
+            Math.random()
+          );
+          box.material = boxMat;
+
+          // position
+          const { x, y, z } = getPosition(
+            0 - Math.random() * 80 + 40,
+            0 - Math.random() * 80 + 40,
+            2.5 * unit
+          );
+          box.position = new BABYLON.Vector3(x, y, z);
+          box.lookAt(parentGlobe.position);
+          // 重置mesh坐标系
+          box.rotate(BABYLON.Axis.Y, Math.PI / 2, BABYLON.Space.LOCAL);
+          box.rotate(BABYLON.Axis.Z, Math.PI / 2, BABYLON.Space.LOCAL);
+          // cylinder.translate(BABYLON.Axis.Y, -height / 2, BABYLON.Space.LOCAL);
+          // animation
+          const scale = Math.random() * 2 + 1;
+          const keys = [
+            {
+              frame: 1,
+              value: 0,
+            },
+            {
+              frame: 3,
+              value: scale / 2,
+            },
+            {
+              frame: 5,
+              value: scale,
+            },
+            {
+              frame: 7,
+              value: scale / 2,
+            },
+            {
+              frame: 9,
+              value: 0,
+            },
+          ];
+          const yScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.y",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          yScaleSlide.setKeys(keys);
+          box.animations.push(yScaleSlide);
+          scene.beginAnimation(box, 0, 10, true);
+        });
+      };
+      const drawToolTip = (mesh) => {
+        const { pointerX, pointerY } = scene;
+        const tooltipBox = document.querySelector(".tool-tip");
+        if (!mesh) {
+          tooltipBox.style.display = "none";
+          return;
+        }
+        tooltipBox.style.display = "block";
+        tooltipBox.style.top = pointerY + 25 + "px";
+        tooltipBox.style.left = pointerX + 25 + "px";
+      };
+
+      // 圆柱体
+      const drawCylinder = (parentGlobe) => {
+        new Array(15).fill(0).forEach((item, index) => {
+          const height = Math.random() * 2;
+          // mesh
+          const cylinder = BABYLON.MeshBuilder.CreateCylinder("", {
+            arc: 1,
+            height: height,
+            diameter: 1,
+            tessellation: 24,
+          });
+
+          cylinder.clickCallBack = () => {
+            alert("圆柱体被点击，触发回调：：" + index);
+          };
+          cylinder.hoverCallBack = () => {
+            console.log("圆柱体被hover，触发回调：：" + index);
+          };
+          // material
+          const cylinderMat = new BABYLON.StandardMaterial();
+          cylinderMat.diffuseColor = new BABYLON.Color3(
+            Math.random(),
+            Math.random(),
+            Math.random()
+          );
+          cylinder.material = cylinderMat;
+
+          // position
+          const { x, y, z } = getPosition(
+            45 - Math.random() * 80 + 40,
+            22.5 - Math.random() * 80 + 40,
+            2.5 * unit
+          );
+          cylinder.position = new BABYLON.Vector3(x, y, z);
+          cylinder.lookAt(parentGlobe.position);
+          // 重置mesh坐标系
+          cylinder.rotate(BABYLON.Axis.Y, Math.PI / 2, BABYLON.Space.LOCAL);
+          cylinder.rotate(BABYLON.Axis.Z, Math.PI / 2, BABYLON.Space.LOCAL);
+          // cylinder.translate(BABYLON.Axis.Y, -height / 2, BABYLON.Space.LOCAL);
+          // animation
+          const scale = Math.random() * 2 + 1;
+          const keys = [
+            {
+              frame: 1,
+              value: 0,
+            },
+            {
+              frame: 3,
+              value: scale / 2,
+            },
+            {
+              frame: 5,
+              value: scale,
+            },
+            {
+              frame: 7,
+              value: scale / 2,
+            },
+            {
+              frame: 9,
+              value: 0,
+            },
+          ];
+          const yScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.y",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          yScaleSlide.setKeys(keys);
+          cylinder.animations.push(yScaleSlide);
+          scene.beginAnimation(cylinder, 0, 10, true);
+        });
+      };
+
+      // normal
+      const drawScatter = (parentGlobe) => {
+        new Array(15).fill(0).forEach((item, index) => {
+          // mesh
+          const scatter = BABYLON.MeshBuilder.CreateDisc("", {
+            radius: Math.random() * 2 + 1,
+            arc: 1,
+          });
+          scatter.clickCallBack = () => {
+            alert("normal，触发回调：：" + index);
+          };
+          scatter.hoverCallBack = () => {
+            console.log("normal,hover回调：：" + index);
+          };
+          // material
+          const scatterMat = new BABYLON.StandardMaterial("boxMat");
+          scatterMat.diffuseColor = new BABYLON.Color3(
+            Math.random(),
+            Math.random(),
+            Math.random()
+          );
+          scatter.material = scatterMat;
+          // position
+          const { x, y, z } = getPosition(
+            -90 - Math.random() * 80 + 40,
+            45 - Math.random() * 80 + 40,
+            2.5 * unit
+          );
+          scatter.position = new BABYLON.Vector3(x, y, z);
+          scatter.lookAt(parentGlobe.position);
+          // animation
+          const scale = Math.random() * 2;
+          const keys = [
+            {
+              frame: 0,
+              value: 0.2,
+            },
+            {
+              frame: 1,
+              value: scale / 2,
+            },
+            {
+              frame: 2,
+              value: scale,
+            },
+            {
+              frame: 3,
+              value: scale / 2,
+            },
+            {
+              frame: 4,
+              value: 0.2,
+            },
+          ];
+          const xScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.x",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          const yScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.y",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          xScaleSlide.setKeys(keys);
+          yScaleSlide.setKeys(keys);
+          scatter.animations.push(xScaleSlide);
+          scatter.animations.push(yScaleSlide);
+          scene.beginAnimation(scatter, 0, 5 * 1, true);
+        });
+      };
+
+      const drawScatterTexture = (parentGlobe) => {
+        new Array(15).fill(0).forEach((item, index) => {
+          // mesh
+          const scatter = BABYLON.MeshBuilder.CreateDisc("", {
+            radius: Math.random() * 2 + 1,
+            arc: 1,
+          });
+          // material
+          const scatterMat = new BABYLON.StandardMaterial("boxMat");
+          scatterMat.opacityTexture = new BABYLON.Texture(
+            "./static/IMG/dotInverted.png"
+          );
+          // scatterMat.emissiveColor = new BABYLON.Color3(1, 0, 0);
+          scatterMat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+          scatter.material = scatterMat;
+          // position
+          const { x, y, z } = getPosition(
+            135 - Math.random() * 80 + 40,
+            -72.5 - Math.random() * 80 + 40,
+            2.5 * unit
+          );
+          scatter.position = new BABYLON.Vector3(x, y, z);
+          scatter.lookAt(parentGlobe.position);
+          // animation
+          const scale = Math.random() * 2;
+          const keys = [
+            {
+              frame: 0,
+              value: 0.2,
+            },
+            {
+              frame: 1,
+              value: scale / 2,
+            },
+            {
+              frame: 2,
+              value: scale,
+            },
+            {
+              frame: 3,
+              value: scale / 2,
+            },
+            {
+              frame: 4,
+              value: 0.2,
+            },
+          ];
+          const xScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.x",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          const yScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.y",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          xScaleSlide.setKeys(keys);
+          yScaleSlide.setKeys(keys);
+          scatter.animations.push(xScaleSlide);
+          scatter.animations.push(yScaleSlide);
+          scene.beginAnimation(scatter, 0, 5 * 1, true);
+        });
+      };
+
+      const drawScatterTexture2 = (parentGlobe) => {
+        new Array(15).fill(0).forEach((item, index) => {
+          // mesh
+          const scatter = BABYLON.MeshBuilder.CreateDisc("", {
+            radius: Math.random() * 2 + 1,
+            arc: 1,
+          });
+          // material
+          const scatterMat = new BABYLON.StandardMaterial("boxMat");
+
+          scatterMat.diffuseTexture = new BABYLON.Texture(
+            "./static/IMG/dotInverted.png"
+          );
+          scatterMat.useAlphaFromDiffuseTexture = true;
+          scatterMat.diffuseTexture.hasAlpha = true;
+
+          scatterMat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+          scatter.material = scatterMat;
+          // position
+          const { x, y, z } = getPosition(
+            110 - Math.random() * 80 + 40,
+            60.5 - Math.random() * 80 + 40,
+            2.5 * unit
+          );
+          scatter.position = new BABYLON.Vector3(x, y, z);
+          scatter.lookAt(parentGlobe.position);
+          // animation
+          const scale = Math.random() * 2;
+          const keys = [
+            {
+              frame: 0,
+              value: 0.2,
+            },
+            {
+              frame: 1,
+              value: scale / 2,
+            },
+            {
+              frame: 2,
+              value: scale,
+            },
+            {
+              frame: 3,
+              value: scale / 2,
+            },
+            {
+              frame: 4,
+              value: 0.2,
+            },
+          ];
+          const xScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.x",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          const yScaleSlide = new BABYLON.Animation(
+            "xScaleSlide",
+            "scaling.y",
+            1,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+            true
+          );
+          xScaleSlide.setKeys(keys);
+          yScaleSlide.setKeys(keys);
+          scatter.animations.push(xScaleSlide);
+          scatter.animations.push(yScaleSlide);
+          scene.beginAnimation(scatter, 0, 5 * 1, true);
+        });
+      };
+
+      const meshHoverListener = (globe) => {
+        globe.isPickable = false;
+        window.addEventListener("mousemove", () => {
+          const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+
+          if (pickResult.hit) {
+            console.log(pickResult);
+          }
+        });
+      };
+
+      const meshMouseListener = (globe) => {
+        // globe.isPickable = false;
+
+        scene.onPointerDown = function (evt) {
+          const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+          if (!pickResult.hit) return;
+          const pickMesh = pickResult.pickedMesh;
+          if (!pickMesh.clickCallBack) return;
+
+          if (pickMesh.clickCallBack) pickMesh.clickCallBack();
+        };
+
+        const pickMeshs = [];
+        scene.onPointerMove = function (evt) {
+          const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+          document.querySelector("body").style.cursor = "default";
+          const pickMesh = pickResult.pickedMesh;
+
+          if (!pickResult.hit) {
+            drawToolTip(null);
+            pickMeshs.forEach((item) => outLineMeshLayer.removeMesh(item));
+            return;
+          }
+
+          if (!pickMesh.hoverCallBack) return;
+
+          pickMeshs.push(pickMesh);
+          drawToolTip(pickMesh);
+          outLineMeshLayer.addMesh(pickMesh, new BABYLON.Color3(1, 0, 0));
+
+          document.querySelector("body").style.cursor = "pointer";
+          if (pickMesh.hoverCallBack) pickMesh.hoverCallBack();
+        };
+      };
+
+      drawBox(globe);
+      drawScatter(globe);
+      drawCylinder(globe);
+      drawScatterTexture(globe);
+      drawScatterTexture2(globe);
+      // meshHoverListener(globe);
+      meshMouseListener(globe);
+
+      render();
+    </script>
+  </body>
+</html>

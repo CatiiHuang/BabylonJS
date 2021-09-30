@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babulon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene } from "./util/util.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera, light1 } = initScene(engine, canvas);
+      //
+      axisHelper(scene, 50);
+      // 消除默认光源
+      // light1.dispose();
+      light1.intensity = 0.5;
+
+      const lampLight = new BABYLON.SpotLight(
+        "lampLight",
+        BABYLON.Vector3.Zero(),
+        new BABYLON.Vector3(1, -1, 1),
+        Math.PI,
+        1,
+        scene
+      );
+      lampLight.diffuse = BABYLON.Color3.Yellow();
+
+      const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {}, scene);
+      const yellowMat = new BABYLON.StandardMaterial();
+      yellowMat.emissiveColor = BABYLON.Color3.Yellow();
+
+      sphere.material = yellowMat;
+      sphere.position.x = 2;
+      sphere.position.y = 10.5;
+      lampLight.parent = sphere;
+
+      const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 50,
+        height: 50,
+      });
+
+      render();
+    </script>
+  </body>
+</html>

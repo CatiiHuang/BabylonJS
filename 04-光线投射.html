@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babulon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script>
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+
+      const initRender = (scene, animation) => {
+        engine.runRenderLoop(function () {
+          scene.render();
+          animation();
+        });
+        window.addEventListener("resize", function () {
+          engine.resize();
+        });
+      };
+
+      const initScene = () => {
+        // 场景
+        const scene = new BABYLON.Scene(engine);
+        scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+        // 相机
+        const camera = new BABYLON.ArcRotateCamera(
+          "Camera",
+          Math.PI / 2,
+          Math.PI / 2,
+          10,
+          new BABYLON.Vector3(0, 0, 0),
+          scene
+        );
+        camera.attachControl(canvas, true);
+        // 灯光
+        const light1 = new BABYLON.HemisphericLight(
+          "light1",
+          new BABYLON.Vector3(0, 1000, 0),
+          scene
+        );
+        const light2 = new BABYLON.HemisphericLight(
+          "light2",
+          new BABYLON.Vector3(0, -1000, 0),
+          scene
+        );
+        return {
+          scene,
+          camera,
+          light1,
+          light2,
+        };
+      };
+
+      const createScene = (scene) => {
+        var box = BABYLON.Mesh.CreateBox("box", 4.0, scene);
+        box.position.y = 2;
+        box.scaling.z = 2;
+        var matBox = new BABYLON.StandardMaterial("matBox", scene);
+        matBox.diffuseColor = new BABYLON.Color3(1.0, 0.1, 0.1);
+        box.material = matBox;
+        box.isPickable = false;
+
+        var box2 = BABYLON.Mesh.CreateBox("box2", 8.0, scene);
+        box2.position = new BABYLON.Vector3(-20, 4, 0);
+        var matBox2 = new BABYLON.StandardMaterial("matBox2", scene);
+        matBox2.diffuseColor = new BABYLON.Color3(0.1, 0.1, 1);
+        box2.material = matBox2;
+
+        var box3 = box2.clone();
+        box3.position.x -= 20;
+
+        var box4 = BABYLON.Mesh.CreateBox("box4", 8.0, scene);
+        box4.position = new BABYLON.Vector3(0, 4, 30);
+        var matBox4 = new BABYLON.StandardMaterial("matBox4", scene);
+        matBox4.diffuseColor = new BABYLON.Color3(0.1, 1, 0.1);
+        box4.material = matBox4;
+
+        function mousemovef() {
+          var pickResult = scene.pick(scene.pointerX, scene.pointerY);
+
+          if (pickResult.hit) {
+            var diffX = pickResult.pickedPoint.x - box.position.x;
+            var diffY = pickResult.pickedPoint.z - box.position.z;
+            box.rotation.y = Math.atan2(diffX, diffY);
+          }
+        }
+
+        scene.onPointerMove = function () {
+          mousemovef();
+        };
+
+        function vecToLocal(vector, mesh) {
+          var m = mesh.getWorldMatrix();
+          var v = BABYLON.Vector3.TransformCoordinates(vector, m);
+          return v;
+        }
+
+        function castRay() {
+          var origin = box.position;
+
+          var forward = new BABYLON.Vector3(0, 0, 1);
+          forward = vecToLocal(forward, box);
+
+          var direction = forward.subtract(origin);
+          direction = BABYLON.Vector3.Normalize(direction);
+
+          var length = 100;
+
+          var ray = new BABYLON.Ray(origin, direction, length);
+
+          var hits = scene.multiPickWithRay(ray);
+          BABYLON.RayHelper.CreateAndShow(
+            ray,
+            scene,
+            new BABYLON.Color3(1, 1, 0.1)
+          );
+          if (hits) {
+            for (var i = 0; i < hits.length; i++) {
+              hits[i].pickedMesh.scaling.y += 0.01;
+            }
+          }
+        }
+
+        scene.registerBeforeRender(function () {
+          castRay();
+        });
+
+        const animation = () => {};
+        return {
+          animation,
+        };
+      };
+
+      (() => {
+        const { scene } = initScene();
+        const { animation } = createScene(scene);
+        initRender(scene, animation);
+      })();
+    </script>
+  </body>
+</html>

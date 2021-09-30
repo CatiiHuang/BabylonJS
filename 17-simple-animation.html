@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babylon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene } from "./util/util.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera } = initScene(engine, canvas);
+      //
+      axisHelper(scene, 50);
+
+      const box = BABYLON.MeshBuilder.CreateBox(
+        "myBox1",
+        {
+          height: 2,
+          width: 2,
+          depth: 2,
+          faceColors: new Array(6).fill(new BABYLON.Color4(0, 0.5, 0.5, 1)),
+        },
+        scene
+      );
+
+      const zSlide = new BABYLON.Animation(
+        "xSlide",
+        "position.z",
+        1,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+        true
+      );
+      zSlide.setKeys([
+        {
+          frame: 0,
+          value: 10,
+        },
+        {
+          frame: 1,
+          value: -10,
+        },
+        {
+          frame: 2,
+          value: 10,
+        },
+      ]);
+
+      const xSlide = new BABYLON.Animation(
+        "xSlide",
+        "position.x",
+        1,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+        true
+      );
+      xSlide.setKeys([
+        {
+          frame: 0,
+          value: 10,
+        },
+        {
+          frame: 1,
+          value: -10,
+        },
+        {
+          frame: 2,
+          value: 10,
+        },
+      ]);
+      const ySlide = new BABYLON.Animation(
+        "xSlide",
+        "position.y",
+        1,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+        true
+      );
+      ySlide.setKeys([
+        {
+          frame: 0,
+          value: 10,
+        },
+        {
+          frame: 1,
+          value: -10,
+        },
+        {
+          frame: 2,
+          value: 10,
+        },
+      ]);
+
+      const xRote = new BABYLON.Animation(
+        "xSlide",
+        "rotation.x",
+        1,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+        true
+      );
+      xRote.setKeys([
+        {
+          frame: 0,
+          value: -Math.PI,
+        },
+        {
+          frame: 1,
+          value: Math.PI,
+        },
+        {
+          frame: 2,
+          value: -Math.PI,
+        },
+      ]);
+
+      const box1 = box.clone();
+      box.animations.push(xSlide);
+      box.animations.push(ySlide);
+      box.animations.push(zSlide);
+      box.animations.push(xRote);
+
+      //   box1.animations.push(xSlide);
+      box1.animations.push(ySlide);
+      // box1.animations.push(zSlide);
+      box1.animations.push(xRote);
+
+      scene.beginAnimation(box, 0, 2 * 1, true);
+      scene.beginAnimation(box1, 0, 10 * 1, true);
+
+      render();
+    </script>
+  </body>
+</html>

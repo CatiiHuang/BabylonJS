@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babulon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script>
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      let outLineMeshLayer = null;
+
+      const initRender = (scene, animation) => {
+        engine.runRenderLoop(function () {
+          scene.render();
+          animation();
+        });
+        window.addEventListener("resize", function () {
+          engine.resize();
+        });
+      };
+
+      const initScene = () => {
+        // 场景
+        const scene = new BABYLON.Scene(engine);
+        scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+        outLineMeshLayer = new BABYLON.HighlightLayer(
+          "outLineMeshLayer",
+          scene
+        );
+        // 相机
+        const camera = new BABYLON.ArcRotateCamera(
+          "Camera",
+          Math.PI / 2,
+          Math.PI / 2,
+          100,
+          new BABYLON.Vector3(0, 0, 0),
+          scene
+        );
+        camera.attachControl(canvas, true);
+        // 灯光
+        const light1 = new BABYLON.HemisphericLight(
+          "light1",
+          new BABYLON.Vector3(0, 1000, 0),
+          scene
+        );
+        const light2 = new BABYLON.HemisphericLight(
+          "light2",
+          new BABYLON.Vector3(0, -1000, 0),
+          scene
+        );
+        return {
+          scene,
+          camera,
+          light1,
+          light2,
+        };
+      };
+
+      const createScene = (scene) => {
+        const bigBox = BABYLON.MeshBuilder.CreateBox(
+          "bigBox",
+          { height: 50, width: 50, depth: 50 },
+          scene
+        );
+        const bigBoxMaterial = new BABYLON.StandardMaterial(
+          "bigBoxMaterial",
+          scene
+        );
+        bigBoxMaterial.wireframe = true;
+        bigBox.material = bigBoxMaterial;
+        // 禁止选中
+        bigBox.isPickable = false;
+
+        for (let i = 0; i < 100; i++) {
+          const r = Math.random() * 8;
+          const range = 50 - r;
+          const box = BABYLON.MeshBuilder.CreateBox(
+            "box",
+            { height: r, width: r, depth: r },
+            scene
+          );
+          const boxMaterial = new BABYLON.StandardMaterial(
+            "bigBoxMaterial",
+            scene
+          );
+          boxMaterial.diffuseColor = new BABYLON.Color3(
+            Math.random(),
+            Math.random(),
+            Math.random()
+          );
+          box.material = boxMaterial;
+
+          box.position = new BABYLON.Vector3(
+            Math.random() * range - range / 2,
+            Math.random() * range - range / 2,
+            Math.random() * range - range / 2
+          );
+        }
+        let activeModel = null;
+        let activeColor = null;
+        // window.addEventListener("click", function () {
+        //   // We try to pick an object
+        //   const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+        //   if (pickResult.hit) {
+        //     const model = pickResult.pickedMesh;
+        //     model.material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+        //   }
+        // });
+        window.addEventListener("mousemove", function () {
+          // We try to pick an object
+          const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+          if (pickResult.hit) {
+            // 选中模型
+            if (!activeModel) {
+              // 选中模型不存在
+              activeModel = pickResult.pickedMesh;
+              activeColor = new BABYLON.Color3(
+                ...Object.values(pickResult.pickedMesh.material.diffuseColor)
+              );
+            }
+
+            if (activeModel && activeModel != pickResult.pickedMesh) {
+              // 选中新模式
+
+              activeModel.material.diffuseColor = activeColor;
+              outLineMeshLayer.removeMesh(activeModel);
+              activeModel = pickResult.pickedMesh;
+              activeColor = new BABYLON.Color3(
+                ...Object.values(pickResult.pickedMesh.material.diffuseColor)
+              );
+            }
+            activeModel.material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+            outLineMeshLayer.addMesh(activeModel, new BABYLON.Color3(1, 0, 0));
+          } else if (activeModel) {
+            // 未选中模型
+            activeModel.material.diffuseColor = activeColor;
+            outLineMeshLayer.removeMesh(activeModel);
+            activeModel = null;
+            activeColor = null;
+          }
+        });
+        const animation = () => {};
+        return {
+          animation,
+        };
+      };
+
+      (() => {
+        const { scene } = initScene();
+        const { animation } = createScene(scene);
+        initRender(scene, animation);
+      })();
+    </script>
+  </body>
+</html>

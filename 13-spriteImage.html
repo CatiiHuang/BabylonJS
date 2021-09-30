@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babulon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper } from "./util/util.js";
+
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+
+      const initRender = (scene, animation) => {
+        engine.runRenderLoop(function () {
+          scene.render();
+          animation();
+        });
+        window.addEventListener("resize", function () {
+          engine.resize();
+        });
+      };
+
+      const initScene = () => {
+        // 场景
+        const scene = new BABYLON.Scene(engine);
+        scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+        // 相机
+        const camera = new BABYLON.ArcRotateCamera(
+          "Camera",
+          Math.PI / 2,
+          Math.PI / 2,
+          40,
+          new BABYLON.Vector3(0, 0, 0),
+          scene
+        );
+        camera.position = new BABYLON.Vector3(50, 50, 50);
+        camera.attachControl(canvas, true);
+        // 灯光
+        const light1 = new BABYLON.HemisphericLight(
+          "light1",
+          new BABYLON.Vector3(0, 1000, 0),
+          scene
+        );
+        const light2 = new BABYLON.HemisphericLight(
+          "light2",
+          new BABYLON.Vector3(0, -1000, 0),
+          scene
+        );
+        return {
+          scene,
+          camera,
+          light1,
+          light2,
+        };
+      };
+
+      const createScene = () => {
+        const { scene } = initScene();
+        const spriteManagerTrees = new BABYLON.SpriteManager(
+          "treesManager",
+          "./static/IMG/palmtree.png",
+          2000,
+          { width: 512, height: 1024 },
+          scene
+        );
+
+        new Array(50).fill(0).forEach((it, i) => {
+          const tree = new BABYLON.Sprite("tree", spriteManagerTrees);
+          tree.position = new BABYLON.Vector3(
+            (Math.random() * 1 - 0.5) * 20,
+            (Math.random() * 1 - 0.5) * 20,
+            (Math.random() * 1 - 0.5) * 20
+          );
+        });
+
+        axisHelper(scene, 50);
+
+        const animation = () => {};
+        return {
+          animation,
+          scene,
+        };
+      };
+
+      (() => {
+        const { scene, animation } = createScene();
+        initRender(scene, animation);
+      })();
+    </script>
+  </body>
+</html>

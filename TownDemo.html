@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babylon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene } from "./util/util.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera, light1 } = initScene(engine, canvas);
+      axisHelper(scene, 225);
+
+      camera.upperBetaLimit = Math.PI / 1.8;
+      camera.position = new BABYLON.Vector3(60, 20, 60);
+
+      // 环境光强度调节面板
+      const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+      const panel = new BABYLON.GUI.StackPanel();
+      panel.width = "220px";
+      panel.top = "-50px";
+      panel.horizontalAlignment =
+        BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+      panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+      adt.addControl(panel);
+
+      const header = new BABYLON.GUI.TextBlock();
+      header.text = "Night to Day";
+      header.height = "30px";
+      header.color = "white";
+      panel.addControl(header);
+
+      const slider = new BABYLON.GUI.Slider();
+      slider.minimum = 0;
+      slider.maximum = 1;
+      slider.borderColor = "black";
+      slider.color = "#AAAAAA";
+      slider.background = "#white";
+      slider.value = 1;
+      slider.height = "20px";
+      slider.width = "200px";
+      panel.addControl(slider);
+
+      slider.onValueChangedObservable.add((value) => {
+        if (light1) {
+          light1.intensity = value;
+        }
+      });
+
+      // ground
+      const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 75,
+        height: 75,
+      });
+      const groundMat = new BABYLON.StandardMaterial("groundMat");
+      groundMat.diffuseTexture = new BABYLON.Texture(
+        "https://assets.babylonjs.com/environments/villagegreen.png"
+      );
+      groundMat.diffuseTexture.hasAlpha = true;
+      ground.material = groundMat;
+
+      // large ground
+      const largeGroundMat = new BABYLON.StandardMaterial("largeGroundMat");
+      largeGroundMat.diffuseTexture = new BABYLON.Texture(
+        "https://assets.babylonjs.com/environments/valleygrass.png"
+      );
+      const largeGround = BABYLON.MeshBuilder.CreateGroundFromHeightMap(
+        "largeGround",
+        "https://assets.babylonjs.com/environments/villageheightmap.png",
+        {
+          width: 450,
+          height: 450,
+          subdivisions: 10,
+          minHeight: 0,
+          maxHeight: 15,
+        }
+      );
+      largeGround.material = largeGroundMat;
+      largeGround.position.y = -0.01;
+
+      // skyBox
+      const skybox = BABYLON.MeshBuilder.CreateBox(
+        "skyBox",
+        { size: 3000 },
+        scene
+      );
+      const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+      skyboxMaterial.backFaceCulling = false;
+      skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+        "https://playground.babylonjs.com/textures/skybox",
+        scene
+      );
+      skyboxMaterial.reflectionTexture.coordinatesMode =
+        BABYLON.Texture.SKYBOX_MODE;
+      skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+      skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+      skybox.material = skyboxMaterial;
+
+      // the tree
+      const spriteManagerTrees = new BABYLON.SpriteManager(
+        "treesManager",
+        "./static/IMG/palmtree.png",
+        2000,
+        { width: 512, height: 1024 },
+        scene
+      );
+
+      new Array(200).fill(0).forEach((it, i) => {
+        const tree = new BABYLON.Sprite("tree", spriteManagerTrees);
+        tree.position = new BABYLON.Vector3(
+          (Math.random() - 0.5) * 200,
+          3,
+          (Math.random() - 0.5) * 200
+        );
+        tree.width = 5;
+        tree.height = 6;
+      });
+
+      // 喷泉
+      // 喷泉轮廓
+      const fountainProfile = [
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(5, 0, 0),
+        new BABYLON.Vector3(5, 2, 0),
+        new BABYLON.Vector3(4, 2, 0),
+        new BABYLON.Vector3(4, 0.5, 0),
+        new BABYLON.Vector3(0.5, 1, 0),
+        new BABYLON.Vector3(0.5, 5, 0),
+        new BABYLON.Vector3(1.5, 6, 0),
+      ];
+      // 喷泉
+      const fountain = BABYLON.MeshBuilder.CreateLathe(
+        "fountain",
+        {
+          shape: fountainProfile,
+          sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+        },
+        scene
+      );
+      fountain.scaling = new BABYLON.Vector3(0.4, 0.4, 0.4);
+      fountain.position = new BABYLON.Vector3(-15, 0, -15);
+      // 粒子系统
+      const particleSystem = new BABYLON.ParticleSystem(
+        "particles",
+        5000,
+        scene
+      );
+      // 添加粒子贴图
+      particleSystem.particleTexture = new BABYLON.Texture(
+        "./static/IMG/flare.png",
+        scene
+      );
+      // 发射范围
+      particleSystem.emitter = new BABYLON.Vector3(
+        fountain.position.x,
+        2,
+        fountain.position.z
+      );
+      particleSystem.minEmitBox = new BABYLON.Vector3(-0.1, 0, 0);
+      particleSystem.maxEmitBox = new BABYLON.Vector3(0.1, 0, 0);
+
+      // color & size & time
+      particleSystem.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
+      particleSystem.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
+      particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.4, 0.0);
+
+      particleSystem.minSize = 0.05;
+      particleSystem.maxSize = 0.25;
+
+      particleSystem.minLifeTime = 1;
+      particleSystem.maxLifeTime = 2;
+      particleSystem.emitRate = 1500;
+      // Blend mode : BLENDMODE_ONEONE, or BLENDMODE_STANDARD 混合模式
+      particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+      // Set the gravity of all particles 重力
+      particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+      // Direction of each particle after it has been emitted
+      particleSystem.direction1 = new BABYLON.Vector3(-0.3, 3, 0.3);
+      particleSystem.direction2 = new BABYLON.Vector3(0.3, 3, -0.3);
+      // Speed
+      particleSystem.minAngularSpeed = 0;
+      particleSystem.maxAngularSpeed = Math.PI;
+      particleSystem.minEmitPower = 1;
+      particleSystem.maxEmitPower = 3;
+      particleSystem.updateSpeed = 0.025;
+      // start
+      particleSystem.start();
+
+      // 路灯
+      // 创建聚光灯
+      const lampLight = new BABYLON.SpotLight(
+        "lampLight",
+        BABYLON.Vector3.Zero(),
+        new BABYLON.Vector3(0, -1, 0),
+        Math.PI,
+        1,
+        scene
+      );
+      lampLight.diffuse = BABYLON.Color3.Yellow();
+
+      // 创建路灯形状
+      const lampShape = [];
+      for (let i = 0; i < 20; i++) {
+        lampShape.push(
+          new BABYLON.Vector3(
+            Math.cos((i * Math.PI) / 10),
+            Math.sin((i * Math.PI) / 10),
+            0
+          )
+        );
+      }
+      lampShape.push(lampShape[0]);
+      const lampPath = [];
+      lampPath.push(new BABYLON.Vector3(0, 0, 0));
+      lampPath.push(new BABYLON.Vector3(0, 10, 0));
+      for (let i = 0; i < 20; i++) {
+        lampPath.push(
+          new BABYLON.Vector3(
+            1 + Math.cos(Math.PI - (i * Math.PI) / 40),
+            10 + Math.sin(Math.PI - (i * Math.PI) / 40),
+            0
+          )
+        );
+      }
+      lampPath.push(new BABYLON.Vector3(3, 11, 0));
+      // 挤压成形
+      const lamp = BABYLON.MeshBuilder.ExtrudeShape("lamp", {
+        cap: BABYLON.Mesh.CAP_END,
+        shape: lampShape,
+        path: lampPath,
+        scale: 0.3,
+      });
+
+      // 创建灯泡
+      const bulb = BABYLON.MeshBuilder.CreateSphere("bulb", {
+        diameterX: 1.5,
+        diameterZ: 0.8,
+      });
+      // 黄色基础材质
+      const yellowMat = new BABYLON.StandardMaterial("yellowMat");
+      yellowMat.emissiveColor = BABYLON.Color3.Yellow();
+      bulb.material = yellowMat;
+      bulb.parent = lamp;
+      bulb.position.x = 2;
+      bulb.position.y = 10.5;
+      lampLight.parent = bulb;
+      lamp.scaling = new BABYLON.Vector3(0.7, 0.7, 0.7);
+      lamp.position = new BABYLON.Vector3(-20, 0, -20);
+      lamp.rotation.y = -Math.PI / 4;
+
+      camera.parent = lamp;
+      console.log(camera);
+
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babulon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script>
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+
+      const initRender = (scene) => {
+        engine.runRenderLoop(function () {
+          scene.render();
+        });
+        window.addEventListener("resize", function () {
+          engine.resize();
+        });
+      };
+
+      const initScene = () => {
+        // 场景
+        const scene = new BABYLON.Scene(engine);
+        scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+        // 相机
+        const camera = new BABYLON.ArcRotateCamera(
+          "Camera",
+          Math.PI / 2,
+          Math.PI / 2,
+          30,
+          new BABYLON.Vector3(0, 0, 0),
+          scene
+        );
+        camera.attachControl(canvas, true);
+        // 灯光
+        const light1 = new BABYLON.HemisphericLight(
+          "light1",
+          new BABYLON.Vector3(0, 1000, 0),
+          scene
+        );
+        const light2 = new BABYLON.HemisphericLight(
+          "light2",
+          new BABYLON.Vector3(0, -1000, 0),
+          scene
+        );
+        return {
+          scene,
+          camera,
+          light1,
+          light2,
+        };
+      };
+
+      const createScene = (scene) => {
+        const myBox1 = BABYLON.MeshBuilder.CreateBox(
+          "myBox1",
+          {
+            height: 2,
+            width: 2,
+            depth: 2,
+            faceColors: new Array(6).fill(new BABYLON.Color4(0, 0.5, 0.5, 1)),
+          },
+          scene
+        );
+        myBox1.position = new BABYLON.Vector3(-5, 0, 0);
+        const myBox2 = BABYLON.MeshBuilder.CreateBox(
+          "myBox1",
+          {
+            height: 2,
+            width: 2,
+            depth: 2,
+            faceColors: new Array(6).fill(new BABYLON.Color4(0, 1, 1, 1)),
+          },
+          scene
+        );
+        myBox2.position = new BABYLON.Vector3(5, 0, 0);
+      };
+
+      (() => {
+        const { scene } = initScene();
+        initRender(scene);
+        createScene(scene);
+      })();
+    </script>
+  </body>
+</html>
