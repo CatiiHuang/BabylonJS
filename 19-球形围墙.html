@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babylon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene, getPosition } from "./util/util.js";
+      import cqGeoJson from "./data/cq_geo_json.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera } = initScene(engine, canvas);
+      //
+      axisHelper(scene, 50);
+
+      // 解析出所有的图形集合
+      function parseGeoJson({ features }) {
+        if (!features.length) return [];
+        return features.reduce((areas, item) => {
+          const { coordinates } = item.geometry;
+          return areas.concat(
+            coordinates.reduce((careas, citem) => {
+              return careas.concat(citem);
+            }, [])
+          );
+        }, []);
+      }
+
+      // earth
+      function drawEarth(params) {
+        const globe = BABYLON.MeshBuilder.CreateSphere(
+          "globe",
+          {
+            arc: Math.PI,
+            diameter,
+          },
+          scene
+        );
+        const globeMat = new BABYLON.StandardMaterial("boxMat");
+        globe.material = globeMat;
+      }
+
+      // 绘制墙体
+      function drawWallPolygon({ material, path, diameter }) {
+        // 转换为path
+        const pathV3 = path.reduce((arr, [lng, lat]) => {
+          const p1 = getPosition(lng, lat, diameter / 2);
+          const p2 = getPosition(lng, lat, diameter / 2 + 0.5);
+          return arr.concat([[p1, p2]]);
+        }, []);
+
+        const wall = BABYLON.MeshBuilder.CreateRibbon("wall", {
+          pathArray: pathV3,
+          sideOrientation: 2,
+        });
+        wall.material = material;
+      }
+
+      const diameter = 50;
+      const wallMat = new BABYLON.StandardMaterial("wallMat");
+      wallMat.diffuseColor = new BABYLON.Color3(0xff0000);
+      // 路径处理
+      const positionArrays = parseGeoJson(cqGeoJson);
+      console.log(positionArrays);
+      positionArrays.forEach((path) => {
+        // 绘制路径墙体
+        drawWallPolygon({
+          material: wallMat,
+          path,
+          diameter,
+        });
+      });
+
+      drawEarth();
+
+      render();
+    </script>
+  </body>
+</html>

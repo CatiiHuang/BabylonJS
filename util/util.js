@@ -81,9 +81,14 @@ export const initScene = (engine, canvas) => {
 export const getPosition = (lng, lat, radius) => {
   const phi = (180 + lng) * (Math.PI / 180);
   const theta = (90 - lat) * (Math.PI / 180);
-  return {
-    x: -radius * Math.sin(theta) * Math.cos(phi),
-    y: radius * Math.cos(theta),
-    z: radius * Math.sin(theta) * Math.sin(phi),
-  };
+  // return {
+  //   x: -radius * Math.sin(theta) * Math.cos(phi),
+  //   y: radius * Math.cos(theta),
+  //   z: radius * Math.sin(theta) * Math.sin(phi),
+  // };
+  return new BABYLON.Vector3(
+    -radius * Math.sin(theta) * Math.cos(phi),
+    radius * Math.cos(theta),
+    radius * Math.sin(theta) * Math.sin(phi)
+  );
 };

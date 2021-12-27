@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babylon</title>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="module">
+      import { axisHelper, initScene } from "./util/util.js";
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const { scene, render, camera } = initScene(engine, canvas);
+      //
+      axisHelper(scene, 50);
+
+      const path = [
+        [80, 0, -40],
+        [10, 0, 0],
+        [60, 0, 50],
+        [0, 0, 0],
+        [10, 0, 10],
+        [-60, 0, 50],
+        [-50, 0, -30],
+        [80, 0, -40],
+      ];
+
+      const pathV3 = path.reduce((arr, [x, y, z]) => {
+        arr.push([
+          new BABYLON.Vector3(x, y, z),
+          new BABYLON.Vector3(x, y + 10, z),
+        ]);
+        return arr;
+      }, []);
+
+      const wall = BABYLON.MeshBuilder.CreateRibbon("helix", {
+        pathArray: pathV3,
+        // closeArray: true,
+        // closePath: true,
+        // offset: 10,
+        sideOrientation: 2,
+      });
+
+      console.log(pathV3);
+
+      const wallMat = new BABYLON.StandardMaterial("boxMat");
+      wallMat.diffuseColor = new BABYLON.Color3(0, 255, 255); //漫反射颜色
+      wallMat.diffuseTexture = new BABYLON.Texture(
+        "https://www.babylonjs-playground.com/textures/floor.png"
+      );
+      wallMat.diffuseTexture.vScale = 10;
+
+      wall.material = wallMat;
+
+      render();
+    </script>
+  </body>
+</html>
