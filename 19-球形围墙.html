@@ -28,7 +28,7 @@
     <canvas id="renderCanvas" touch-action="none"></canvas>
     <script type="module">
       import { axisHelper, initScene, getPosition } from "./util/util.js";
-      import cqGeoJson from "./data/cq_geo_json.js";
+      import cqGeoJson from "./data/china_geo_json.js";
       const canvas = document.getElementById("renderCanvas");
       const engine = new BABYLON.Engine(canvas, true);
       const { scene, render, camera } = initScene(engine, canvas);
