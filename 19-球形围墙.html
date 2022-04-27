@@ -27,9 +27,9 @@
     <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <canvas id="renderCanvas" touch-action="none"></canvas>
     <script type="module">
-      import { axisHelper, initScene, getPosition } from "./util/util.js";
-      import cqGeoJson from "./data/china_geo_json.js";
-      const canvas = document.getElementById("renderCanvas");
+      import { axisHelper, initScene, getPosition } from './util/util.js';
+      import cqGeoJson from './data/china_geo_json.js';
+      const canvas = document.getElementById('renderCanvas');
       const engine = new BABYLON.Engine(canvas, true);
       const { scene, render, camera } = initScene(engine, canvas);
       //
@@ -51,14 +51,14 @@
       // earth
       function drawEarth(params) {
         const globe = BABYLON.MeshBuilder.CreateSphere(
-          "globe",
+          'globe',
           {
             arc: Math.PI,
             diameter,
           },
           scene
         );
-        const globeMat = new BABYLON.StandardMaterial("boxMat");
+        const globeMat = new BABYLON.StandardMaterial('boxMat');
         globe.material = globeMat;
       }
 
@@ -71,7 +71,7 @@
           return arr.concat([[p1, p2]]);
         }, []);
 
-        const wall = BABYLON.MeshBuilder.CreateRibbon("wall", {
+        const wall = BABYLON.MeshBuilder.CreateRibbon('wall', {
           pathArray: pathV3,
           sideOrientation: 2,
         });
@@ -79,19 +79,24 @@
       }
 
       const diameter = 50;
-      const wallMat = new BABYLON.StandardMaterial("wallMat");
+      const wallMat = new BABYLON.StandardMaterial('wallMat');
       wallMat.diffuseColor = new BABYLON.Color3(0xff0000);
       // 路径处理
       const positionArrays = parseGeoJson(cqGeoJson);
-      console.log(positionArrays);
-      positionArrays.forEach((path) => {
-        // 绘制路径墙体
-        drawWallPolygon({
-          material: wallMat,
-          path,
-          diameter,
-        });
+      const wall = BABYLON.MeshBuilder.CreateRibbon('wall', {
+        pathArray: pathV3,
+        sideOrientation: 2,
       });
+
+      console.log(positionArrays);
+      // positionArrays.forEach((path) => {
+      //   // 绘制路径墙体
+      //   drawWallPolygon({
+      //     material: wallMat,
+      //     path,
+      //     diameter,
+      //   });
+      // });
 
       drawEarth();
 

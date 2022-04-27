@@ -28,7 +28,6 @@
     <canvas id="renderCanvas" touch-action="none"></canvas>
     <script type="module">
       import { axisHelper, initScene } from './util/util.js';
-
       const canvas = document.getElementById('renderCanvas');
       const engine = new BABYLON.Engine(canvas, true);
       const { scene, render, camera } = initScene(engine, canvas);
@@ -38,13 +37,29 @@
       const box = BABYLON.MeshBuilder.CreateBox(
         'myBox1',
         {
-          height: 2,
-          width: 2,
-          depth: 2,
+          height: 20,
+          width: 20,
+          depth: 20,
           faceColors: new Array(6).fill(new BABYLON.Color4(0, 0.5, 0.5, 1)),
         },
         scene
       );
+
+      const decal = BABYLON.MeshBuilder.CreateDecal('decal', box, {
+        position: new BABYLON.Vector3(10, 10, 10),
+        normal: new BABYLON.Vector3(1, 1, 1),
+        size: new BABYLON.Vector3(10, 10, 10),
+      });
+
+      const decalMat = new BABYLON.StandardMaterial('decalMat');
+      decalMat.texture = decalMat.zOffset = -2;
+      decal.material = decalMat;
+
+      // text
+      var textureGround = new BABYLON.DynamicTexture('dynamic texture', { width: 400, height: 200 }, scene);
+      var font = 'bold 44px monospace';
+      textureGround.drawText('Grass', 75, 135, font, 'green', 'white', true, true);
+      decalMat.diffuseTexture = textureGround;
 
       render();
     </script>
