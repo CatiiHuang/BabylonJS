@@ -83,20 +83,15 @@
       wallMat.diffuseColor = new BABYLON.Color3(0xff0000);
       // 路径处理
       const positionArrays = parseGeoJson(cqGeoJson);
-      const wall = BABYLON.MeshBuilder.CreateRibbon('wall', {
-        pathArray: pathV3,
-        sideOrientation: 2,
-      });
 
-      console.log(positionArrays);
-      // positionArrays.forEach((path) => {
-      //   // 绘制路径墙体
-      //   drawWallPolygon({
-      //     material: wallMat,
-      //     path,
-      //     diameter,
-      //   });
-      // });
+      positionArrays.forEach((path) => {
+        // 绘制路径墙体
+        drawWallPolygon({
+          material: wallMat,
+          path,
+          diameter,
+        });
+      });
 
       drawEarth();
 
